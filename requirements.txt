@@ -5,3 +5,9 @@ matplotlib
 yfinance
 #cdp-sdk
 ta
+plotly
+kat
+backtesting
+seaborn
+statsmodels.api
+statsmodels.tsa.api

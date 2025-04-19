@@ -28,8 +28,7 @@ class IndicatorCalculator:
     @staticmethod
     def calculate_bollinger_bands(data, window=20, std_factor=2):
         """
-        Calculate Bollinger Bands.
-
+        Calculate Bollinger Bands:
         :param data: DataFrame containing 'Close' prices.
         :param window: Lookback period for moving average.
         :param std_factor: Standard deviation factor for bands.
