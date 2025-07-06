@@ -22,3 +22,5 @@ for file in os.listdir(data_transf):
         # copy the file to data_playground folder
         os.system(f"cp {data_transf}/{file} {data_playground}/{file}")
         
+# delete column from data_playground 
+# cols: Rolling_Outlier_Close,Z_Outlier_Close,Z_Outlier_Volume,Changepoint_RPT_Close,CUSUM_Change,

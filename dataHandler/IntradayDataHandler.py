@@ -70,8 +70,38 @@ class IntradayDataHandler:
 
         logging.info("✅ All files are up-to-date (within 12 hours).")
         return False
-
     def fetch_intraday_data(self):
+        # Define valid period per interval (based on yfinance limitations)
+        interval_to_period = {
+            "1m": "7d",     # Max for 1m
+            "5m": "60d",
+            "15m": "60d",
+            "30m": "60d",
+            "90m": "60d",
+            "1h": "730d"    # Approx 2 years
+        }
+    
+        for ticker in self.tickers:
+            for tf in self.intraday_timeframes:
+                period = interval_to_period.get(tf, "60d")  # Default to 60d if not found
+                path = os.path.join(self.fetched_folder, f"{ticker}_{tf}.csv")
+                logging.info(f"🔄 Fetching {ticker} data for timeframe: {tf} (period: {period})...")
+    
+                try:
+                    data = yf.download(ticker, interval=tf, period=period, auto_adjust=True)
+                    if data.empty:
+                        logging.warning(f"⚠️ No data for {ticker} ({tf})")
+                        continue
+    
+                    data.reset_index(inplace=True)
+                    data.rename(columns={data.columns[0]: "Datetime"}, inplace=True)
+                    data.to_csv(path, index=False)
+                    logging.info(f"✅ Raw data for {ticker} ({tf}) saved to: {path}")
+    
+                except Exception as e:
+                    logging.error(f"❌ Error fetching {ticker} ({tf}): {e}")
+
+    """def fetch_intraday_data(self):
         for ticker in self.tickers:
             for tf in self.intraday_timeframes:
                 path = os.path.join(self.fetched_folder, f"{ticker}_{tf}.csv")
@@ -90,7 +120,7 @@ class IntradayDataHandler:
 
                 except Exception as e:
                     logging.error(f"❌ Error fetching {ticker} ({tf}): {e}")
-
+    """
     def clean_fetched_data(self):
         nan_files = {}
 
@@ -190,13 +220,13 @@ class IntradayDataHandler:
 
 # Example Usage
 if __name__ == "__main__":
-    test_tickers = ["^GSPC","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X"]
+    test_tickers = ["^GSPC","^VIX","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X"]
     # https://uk.finance.yahoo.com/markets/
     mag7_tickers=["AAPL", "TSLA", "MSFT", "AMZN", "GOOG", "META","NVDA"] # OK
     pharma_tickers=["MRNA","PFE","BNTX","LLY"]
     fin_tickers=["PYPL"]
     #https://uk.finance.yahoo.com/markets/world-indices/
-    index_tickers = ["^GSPC","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"] # OK
+    index_tickers = ["^GSPC","^VIX","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"] # OK
     # https://uk.finance.yahoo.com/markets/commodities/
     commod_tickers =["CL=F","GC=F","NG=F","BZ=F","SI=F","HG=F"] #OK
     # https://uk.finance.yahoo.com/markets/currencies/
@@ -210,7 +240,7 @@ if __name__ == "__main__":
     
 
     base_folder = "./all_ohclv_data"
-    intradayCollector = IntradayDataHandler(test_tickers, base_folder)
+    intradayCollector = IntradayDataHandler(tickers, base_folder)
 
     """
      # Before starting fetching/cleaning/processing

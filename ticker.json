@@ -1,0 +1,14 @@
+"test_tickers": ["^GSPC","^VIX","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X","BTC-USD"]
+// https://uk.finance.yahoo.com/markets/
+"mag7_tickers": ["AAPL", "TSLA", "MSFT", "AMZN", "GOOG", "META","NVDA"]
+"pharma_tickers": ["MRNA","PFE","BNTX","LLY"]
+"fin_tickers": ["PYPL"]
+//https://uk.finance.yahoo.com/markets/world-indices/
+"index_tickers" : ["^GSPC","^VIX","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"]
+// https://uk.finance.yahoo.com/markets/commodities/
+"commod_tickers" :["CL=F","GC=F","NG=F","BZ=F","SI=F","HG=F"]
+// https://uk.finance.yahoo.com/markets/currencies/
+"curren_tickers": ["GBPUSD=X","GBPEUR=X","EURUSD=X","GBPJPY=X","JPY=X","GBP=X"]
+// https://uk.finance.yahoo.com/markets/crypto/all/
+"crypt_tickers": ["BTC-USD","ETH-USD","USDT-USD","USDC-USD","MATIC-USD","ADA-USD"]
+// https://uk.finance.yahoo.com/markets/etfs/most-active/

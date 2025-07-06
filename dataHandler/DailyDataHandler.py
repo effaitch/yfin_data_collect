@@ -204,13 +204,13 @@ class DailyDataHandler:
 
 # Example Usage
 if __name__ == "__main__":
-    test_tickers = ["^GSPC","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X"]
+    test_tickers = ["^GSPC","^VIX","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X","BTC-USD"]
     # https://uk.finance.yahoo.com/markets/
     mag7_tickers=["AAPL", "TSLA", "MSFT", "AMZN", "GOOG", "META","NVDA"] # OK
     pharma_tickers=["MRNA","PFE","BNTX","LLY"]
     fin_tickers=["PYPL"]
     #https://uk.finance.yahoo.com/markets/world-indices/
-    index_tickers = ["^GSPC","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"] # OK
+    index_tickers = ["^GSPC","^VIX","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"] # OK
     # https://uk.finance.yahoo.com/markets/commodities/
     commod_tickers =["CL=F","GC=F","NG=F","BZ=F","SI=F","HG=F"] #OK
     # https://uk.finance.yahoo.com/markets/currencies/
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     
 
     base_folder = "./all_ohclv_data"
-    handler = DailyDataHandler(test_tickers, base_folder)
+    handler = DailyDataHandler(tickers, base_folder)
 
     """
      # Before starting fetching/cleaning/processing

@@ -1,13 +1,15 @@
+#venv/bin/python -m pip install -r requirements.txt
 pandas
 numpy
-scikit-learn
 matplotlib
 yfinance
-#cdp-sdk
+cdp-sdk
 ta
 plotly
-kat
 backtesting
 seaborn
-statsmodels.api
-statsmodels.tsa.api
+statsmodels
+binance
+ruptures
+scikit-learn
+#kats>+0.2.0
