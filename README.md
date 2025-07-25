@@ -10,15 +10,17 @@ There are 4 folders that work in unison
    self.raw_folder = os.path.join(base_folder, "raw_intraday")
     this is where we store the processed fetched raw data
    self.processed_folder = os.path.join(base_folder, "process_data")
-   - this is the processed data 
+   - this is the processed data that is new 
    self.transf_folder = os.path.join(base_folder, "transf_data")
-   - this si the transfordmed data
+   - this is the final folder
 
 Then use either the daily or intraday data collection
 - can add more timeranges to intraday but will increase the time to run
 
+Log files are created whevner the function are run 
+usw bash to flter for specific logs: 
+grep -E "\[WARNING\]|\[ERROR\]" intraday_data_handler.log
 
-Future work
-- implement a handling fo all errors in a table
-    - hight eh the date run, ticker, timeframe, error message, last date in file 
+
+
 

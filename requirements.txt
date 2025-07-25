@@ -12,4 +12,6 @@ statsmodels
 binance
 ruptures
 scikit-learn
-#kats>+0.2.0
+python-dotenv
+psycopg2-binary
+python-dateutil

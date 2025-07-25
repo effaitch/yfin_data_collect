@@ -1,4 +1,4 @@
 /all_ohclv_data
 /venv
-__pycache__
-/cookbook
+.*__pycache__
+/logs

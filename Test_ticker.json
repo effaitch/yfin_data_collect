@@ -1,0 +1,3 @@
+{
+  "test_tickers": ["^GSPC","^VIX","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X","BTC-USD"]
+}

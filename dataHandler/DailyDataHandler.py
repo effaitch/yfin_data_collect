@@ -3,10 +3,26 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime, timezone
 import logging
+import json
 
+# 1. Get the current date and time to create a unique filename
+log_filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+# Ensure the logs directory exists
+log_dir = "./logs"
+os.makedirs(log_dir, exist_ok=True)
+
+# 2. Construct the full path for the log file
+log_filepath = os.path.join(log_dir, f"{log_filename}_daily_data_handler.log")
+
+# 3. Configure logging using the generated filename
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s"
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(log_filepath), # Use the variable here
+        logging.StreamHandler()
+    ]
 )
 
 class DailyDataHandler:
@@ -204,36 +220,14 @@ class DailyDataHandler:
 
 # Example Usage
 if __name__ == "__main__":
-    test_tickers = ["^GSPC","^VIX","CL=F","GC=F","GBPUSD=X","GBPEUR=X","EURUSD=X","BTC-USD"]
-    # https://uk.finance.yahoo.com/markets/
-    mag7_tickers=["AAPL", "TSLA", "MSFT", "AMZN", "GOOG", "META","NVDA"] # OK
-    pharma_tickers=["MRNA","PFE","BNTX","LLY"]
-    fin_tickers=["PYPL"]
-    #https://uk.finance.yahoo.com/markets/world-indices/
-    index_tickers = ["^GSPC","^VIX","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"] # OK
-    # https://uk.finance.yahoo.com/markets/commodities/
-    commod_tickers =["CL=F","GC=F","NG=F","BZ=F","SI=F","HG=F"] #OK
-    # https://uk.finance.yahoo.com/markets/currencies/
-    curren_tickers = ["GBPUSD=X","GBPEUR=X","EURUSD=X","GBPJPY=X","JPY=X","GBP=X"] #OK
-    # https://uk.finance.yahoo.com/markets/crypto/all/
-    crypt_tickers=["BTC-USD","ETH-USD","USDT-USD","USDC-USD","MATIC-USD","ADA-USD"] # OK
-    # https://uk.finance.yahoo.com/markets/etfs/most-active/
-    
-    tickers = mag7_tickers+pharma_tickers+fin_tickers + index_tickers + commod_tickers + curren_tickers + crypt_tickers
-    #print(ticker)
-    
+    # Get the absolute path to ticker.json
+    ticker_json_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../ticker.json"))
+    with open(ticker_json_path, "r") as f:
+        ticker_dict = json.load(f)
+    tickers = []
+    for key in ticker_dict:
+        tickers.extend(ticker_dict[key])
 
     base_folder = "./all_ohclv_data"
     handler = DailyDataHandler(tickers, base_folder)
-
-    """
-     # Before starting fetching/cleaning/processing
-    if intradayCollector.needs_update():
-        intradayCollector.fetch_intraday_data()
-        intradayCollector.clean_fetched_data()
-        intradayCollector.check_new_datetime()
-    else:
-        print("ℹ️ No update needed.")
-    """  
-
     handler.update_all()
