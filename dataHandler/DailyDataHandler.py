@@ -13,7 +13,7 @@ log_dir = "./logs"
 os.makedirs(log_dir, exist_ok=True)
 
 # 2. Construct the full path for the log file
-log_filepath = os.path.join(log_dir, f"{log_filename}_daily_data_handler.log")
+log_filepath = os.path.join(log_dir, f"{log_filename}_data_handler.log")
 
 # 3. Configure logging using the generated filename
 logging.basicConfig(

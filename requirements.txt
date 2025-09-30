@@ -15,3 +15,7 @@ scikit-learn
 python-dotenv
 psycopg2-binary
 python-dateutil
+google-cloud-bigquery
+pyarrow
+dotenv
+psycopg2-binary

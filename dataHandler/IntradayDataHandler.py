@@ -4,7 +4,11 @@ import yfinance as yf
 from datetime import datetime, timezone
 import logging
 import json
-#Get the current date and time to create a unique filename
+"""
+LOGGING being appended to daily datahandelr 
+when running main.py file
+
+#""Get the current date and time to create a unique filename
 log_filename=datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Ensure the logs directory exists
@@ -22,7 +26,7 @@ logging.basicConfig(
         logging.FileHandler(log_filepath), # Use the variable here
         logging.StreamHandler()
     ]
-)
+)"""
 
 class IntradayDataHandler:
     def __init__(self, tickers, base_folder):
