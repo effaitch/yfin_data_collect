@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs (will be persisted via volume)
+logs/*.log
+
+# Data folders (will be persisted via volume)
+all_ohclv_data/fetched_data/*
+all_ohclv_data/process_data/*
+all_ohclv_data/transf_data/*
+all_ohclv_data/raw_daily/*
+all_ohclv_data/raw_intraday/*
+
+# Keep directory structure
+!all_ohclv_data/.gitkeep
+!logs/.gitkeep
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+
+
+
+
+
+
+
+
+
+
+
+

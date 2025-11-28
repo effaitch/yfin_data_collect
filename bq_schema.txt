@@ -1,0 +1,10 @@
+BigQuery tables for daily and intraday have the following schema
+   [
+    {"name": "Date", "type": "TIMESTAMP"},
+    {"name": "Ticker", "type": "STRING"},
+    {"name": "Timeframe", "type": "STRING"},
+    {"name": "Open", "type": "FLOAT"},
+    {"name": "High", "type": "FLOAT"},
+    {"name": "Low", "type": "FLOAT"},
+    {"name": "Close", "type": "FLOAT"},
+    {"name": "Volume", "type": "INTEGER"}

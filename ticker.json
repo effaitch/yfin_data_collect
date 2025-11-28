@@ -1,7 +1,7 @@
 {
   "mag7_tickers": ["AAPL", "TSLA", "MSFT", "AMZN", "GOOG", "META","NVDA"],
-  "pharma_tickers": ["MRNA","PFE","BNTX","LLY"],
-  "fin_tickers": ["PYPL"],
+  "portfolio_tickers": ["MRNA","PFE","BNTX","LLY","PYPL","AMD"],
+  "fin_tickers": ["BRK.A", "JPM", "V", "MA", "BAC", "WFC", "MS", "GS", "HSBC", "AXP", "USB", "PNC", "TFC", "BK", "STT", "SCHW", "AIG", "MET", "PRU", "ALL"],
   "index_tickers" : ["^GSPC","^VIX","^DJI", "^IXIC", "^RUT","^STOXX50E","^FTSE","^N225","^GDAXI"],
   "commod_tickers" :["CL=F","GC=F","NG=F","BZ=F","SI=F","HG=F"],
   "curren_tickers": ["GBPUSD=X","GBPEUR=X","EURUSD=X","GBPJPY=X","JPY=X","GBP=X"],

@@ -16,6 +16,6 @@ python-dotenv
 psycopg2-binary
 python-dateutil
 google-cloud-bigquery
+google-cloud-storage
 pyarrow
 dotenv
-psycopg2-binary
