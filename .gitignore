@@ -3,3 +3,8 @@ all_ohclv_data/*
 .*__pycache__
 /logs
 .env
+venv/
+*.json
+!ticker.json
+!test_ticker.json
+!bq_schema.txt
