@@ -1,10 +1,10 @@
 # Data Pipeline Architecture
 
-This document outlines the recommended data pipeline for collecting, storing, and analyzing financial data using this project, especially when dealing with large data volumes and limited local storage.
+This document outlines the data pipeline for collecting, storing, and analyzing financial data using this project.
 
 ## Pipeline Diagram
 
-The architecture is designed to use a small VPS for data collection while offloading storage and analysis to scalable cloud services.
+The architecture uses a small VPS for data collection with optional cloud/local storage for analysis.
 
 ```mermaid
 graph TD;
@@ -16,8 +16,8 @@ graph TD;
         B[service.py on VPS]
     end
 
-    subgraph Cloud Storage & Warehouse
-        C[Google Cloud Storage (GCS) <br/><i>Parquet Files / Data Lake</i>]
+    subgraph Storage Options
+        C[Local PostgreSQL Database]
         D[Google BigQuery <br/><i>Data Warehouse</i>]
     end
 
@@ -28,6 +28,7 @@ graph TD;
     A -- Fetches data --> B;
     B -- Uploads to --> C;
     B -- Uploads to --> D;
+    C -- Queried by --> E;
     D -- Queried by --> E;
 ```
 
@@ -37,37 +38,68 @@ graph TD;
     *   The `service.py` script runs on a schedule (e.g., via cron) on your VPS.
     *   It fetches the latest market data from the Yahoo Finance API.
     *   It performs optional data quality checks to ensure integrity.
-    *   Data is temporarily stored on the VPS's local disk before upload.
+    *   Data is temporarily stored on the VPS's local disk as CSV files.
 
-2.  **Store (in Cloud):**
-    *   The script connects to your Google Cloud account and uploads the processed data to one or both of the following destinations:
-        *   **Google Cloud Storage (GCS):** Data is saved as efficiently compressed and partitioned Parquet files. This acts as a scalable and cost-effective "data lake" for long-term archival.
-        *   **Google BigQuery:** Data is loaded into structured tables. This serves as a high-performance "data warehouse," optimized for fast and complex analytical SQL queries.
+2.  **Store (Local or Cloud):**
+    *   The script uploads the processed data to one or both of the following destinations:
+        *   **Local PostgreSQL:** Data is stored in a local PostgreSQL database on the VPS or nearby server. Good for small to medium datasets with limited query needs.
+        *   **Google BigQuery:** Data is loaded into structured tables in the cloud. This serves as a high-performance "data warehouse," optimized for fast and complex analytical SQL queries.
 
 3.  **Analyze (from anywhere):**
-    *   With the data residing in BigQuery, you can connect powerful tools for analysis without impacting your VPS.
-    *   Run complex SQL queries using the BigQuery web UI or any connected SQL client.
-    *   Connect Business Intelligence (BI) tools like Looker, Tableau, or Google Data Studio to create dashboards.
-    *   Analyze the data in Python or R notebooks by connecting to the BigQuery API.
+    *   **With BigQuery:** Connect powerful tools for analysis without impacting your VPS. Run complex SQL queries using the BigQuery web UI or any connected SQL client. Connect BI tools like Looker, Tableau, or Google Data Studio to create dashboards.
+    *   **With Local PostgreSQL:** Query directly from your VPS or any machine with network access to your PostgreSQL database.
 
 ## Key Benefits
 
-*   **Scalability:** Overcomes the storage limitations (e.g., 200GB SSD) of a single VPS by using virtually limitless cloud storage.
-*   **Performance:** Leverages Google BigQuery's powerful distributed engine to run queries over massive datasets far faster than a local PostgreSQL database could.
-*   **Decoupling:** Your collection service on the VPS is decoupled from your analysis workload. You can scale them independently.
-*   **Cost-Effectiveness:** You only pay for the cloud storage and queries you use, which is often more economical than upgrading VPS hardware.
-*   **Resilience:** Cloud storage solutions are highly durable and resilient, protecting your valuable historical data.
+*   **Flexibility:** Choose between local PostgreSQL (simple, self-contained) or BigQuery (scalable, powerful) based on your needs.
+*   **Performance (BigQuery):** Leverages Google BigQuery's distributed engine to run queries over massive datasets far faster than a local database.
+*   **Decoupling:** Your collection service on the VPS is decoupled from your analysis workload.
+*   **Cost-Effectiveness:** Only pay for cloud resources you actually use.
+*   **Resilience (BigQuery):** Cloud storage solutions are highly durable and resilient.
 
 ## How to Enable This Pipeline
 
-To activate this workflow, configure the relevant settings in your `.env` file:
+Configure the relevant settings in your `.env` file:
 
-1.  Enable the cloud uploaders:
-    *   `ENABLE_GCS=true`
-    *   `ENABLE_BIGQUERY=true`
-2.  Set the storage mode:
-    *   `STORAGE_MODE=both`
-3.  Provide your Google Cloud project details:
-    *   `GCS_BUCKET_NAME`
-    *   `daily_datset_bq` and `intraday_dataset_bq`
-    *   Ensure your `GOOGLE_APPLICATION_CREDENTIALS` are set up correctly.
+**For Local PostgreSQL:**
+```bash
+ENABLE_LOCAL_DB=true
+DB_NAME=your_database
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+**For Google BigQuery:**
+```bash
+ENABLE_BIGQUERY=true
+daily_datset_bq=your-project.dataset.daily_table
+intraday_dataset_bq=your-project.dataset.intraday_table
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
+```
+
+**For Both:**
+```bash
+ENABLE_LOCAL_DB=true
+ENABLE_BIGQUERY=true
+# ... configure both sets of credentials
+```
+
+## Weekend Automation
+
+The pipeline runs automatically via cron job on weekends:
+
+1. Make the script executable:
+   ```bash
+   chmod +x /home/farq/projects/yfin_data_collect/run_weekend_job.sh
+   ```
+
+2. Add to crontab (runs every Saturday at 2:00 AM):
+   ```bash
+   crontab -e
+   # Add:
+   0 2 * * 6 /home/farq/projects/yfin_data_collect/run_weekend_job.sh >> /home/farq/projects/yfin_data_collect/logs/cron_output.log 2>&1
+   ```
+
+See `CRON_SETUP.md` for complete setup instructions.

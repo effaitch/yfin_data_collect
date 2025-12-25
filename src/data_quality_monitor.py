@@ -382,3 +382,8 @@ class DataQualityMonitor:
         
         logger.info(f"Quality report saved: {report_path}")
 
+
+if __name__ == "__main__":
+    """Run data quality checks when executed as a script"""
+    monitor = DataQualityMonitor()
+    monitor.run_checks()

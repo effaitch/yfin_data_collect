@@ -60,9 +60,8 @@ def validate_config():
     # BigQuery configuration
     print("\n[3] Google Cloud BigQuery")
     enable_bigquery = os.getenv("ENABLE_BIGQUERY", "false").lower() == "true"
-    storage_mode = os.getenv("STORAGE_MODE", "bigquery").lower()
     
-    if enable_bigquery or storage_mode in ["bigquery", "both"]:
+    if enable_bigquery:
         check_env_var("daily_datset_bq", "Daily BigQuery table", required=False)
         check_env_var("intraday_dataset_bq", "Intraday BigQuery table", required=False)
         credentials_path = check_env_var("GOOGLE_APPLICATION_CREDENTIALS", "GCP service account JSON", required=False)
@@ -71,21 +70,8 @@ def validate_config():
     else:
         warnings.append("BigQuery upload is disabled (ENABLE_BIGQUERY=false)")
     
-    # GCS configuration
-    print("\n[4] Google Cloud Storage")
-    enable_gcs = os.getenv("ENABLE_GCS", "false").lower() == "true"
-    
-    if enable_gcs or storage_mode in ["parquet", "both"]:
-        check_env_var("GCS_BUCKET_NAME", "GCS bucket name", required=True)
-        check_env_var("GCS_BUCKET_PATH", "GCS bucket path", required=False)
-        credentials_path = check_env_var("GOOGLE_APPLICATION_CREDENTIALS", "GCP service account JSON", required=False)
-        if credentials_path:
-            check_file_exists(credentials_path, "GCP service account")
-    else:
-        warnings.append("GCS Parquet upload is disabled (ENABLE_GCS=false)")
-    
     # Quality monitoring
-    print("\n[5] Data Quality Monitoring")
+    print("\n[4] Data Quality Monitoring")
     enable_quality = os.getenv("ENABLE_QUALITY_CHECKS", "true").lower() == "true"
     if enable_quality:
         check_env_var("QUALITY_REPORT_PATH", "Quality report path", required=False)
@@ -93,10 +79,9 @@ def validate_config():
         warnings.append("Quality checks are disabled (ENABLE_QUALITY_CHECKS=false)")
     
     # Check if at least one storage option is enabled
-    print("\n[6] Storage Options Check")
-    if not enable_local_db and not enable_bigquery and not enable_gcs:
-        if storage_mode not in ["bigquery", "parquet", "both"]:
-            warnings.append("No storage options enabled - data will only be collected locally")
+    print("\n[5] Storage Options Check")
+    if not enable_local_db and not enable_bigquery:
+        warnings.append("No storage options enabled - data will only be collected locally")
     
     # Summary
     print("\n" + "=" * 60)

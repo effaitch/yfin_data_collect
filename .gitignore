@@ -1,6 +1,5 @@
 all_ohclv_data*
-all_ohclv_data/raw_intraday
-/venv
+all_ohclv_data/*
 .*__pycache__
 /logs
 .env

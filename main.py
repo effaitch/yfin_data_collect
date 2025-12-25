@@ -1,8 +1,8 @@
 import os
 import sys
-#sys.path.append(os.path.join(os.path.dirname(__file__), 'dataHandler'))
-from dataHandler.DailyDataHandler import DailyDataHandler
-from dataHandler.IntradayDataHandler import IntradayDataHandler
+#sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+from src.DailyDataHandler import DailyDataHandler
+from src.IntradayDataHandler import IntradayDataHandler
 import pandas as pd
 import yfinance as yf
 import json

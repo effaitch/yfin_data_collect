@@ -10,7 +10,6 @@ A lightweight Python service for automated collection, processing, and storage o
 - **Multiple Storage Options**:
   - Local PostgreSQL database
   - Google Cloud BigQuery tables
-  - Google Cloud Storage Parquet files
 - **Data Quality Monitoring**: Automated quality checks with visual candlestick charts
 - **Comprehensive Logging**: Structured logging with timestamped log files
 - **Flexible Configuration**: Environment-based configuration
@@ -20,13 +19,12 @@ A lightweight Python service for automated collection, processing, and storage o
 
 ```
 yfin_data_collect/
-├── dataHandler/                      # Data collection and processing handlers
+├── src/                              # Data collection and processing handlers
 │   ├── DailyDataHandler.py          # Daily data collection
 │   ├── IntradayDataHandler.py       # Intraday data collection
-│   ├── backfill_combined_csv_local.py  # Local DB upload (legacy)
-│   ├── combine_transf_csv_for_upload.py # BigQuery upload (legacy)
-│   ├── data_quality_monitor.py      # Data quality monitoring
-│   └── gcs_uploader.py              # GCS Parquet uploader
+│   ├── backfill_combined_csv_local.py  # Local DB upload script
+│   ├── combine_transf_csv_for_upload.py # BigQuery upload script
+│   └── data_quality_monitor.py      # Data quality monitoring
 ├── all_ohclv_data/                  # Collected data storage
 │   ├── fetched_data/                # Raw fetched data
 │   ├── process_data/                 # Processed data
@@ -92,15 +90,6 @@ DB_PORT=5432
 ENABLE_BIGQUERY=true
 daily_datset_bq=project.dataset.daily_table
 intraday_dataset_bq=project.dataset.intraday_table
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-```
-
-**With Google Cloud Storage (Parquet)**:
-```bash
-STORAGE_MODE=parquet  # or "both" for BigQuery + Parquet
-ENABLE_GCS=true
-GCS_BUCKET_NAME=your-bucket-name
-GCS_BUCKET_PATH=data
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 ```
 
@@ -172,8 +161,8 @@ The service (`service.py`) orchestrates the complete workflow:
 
 1. **Data Collection**: Fetches daily and intraday data from Yahoo Finance
 2. **Quality Checks**: Runs data quality monitoring (if enabled)
-3. **Local DB Upload**: Uploads to PostgreSQL (if enabled)
-4. **Cloud Storage Upload**: Uploads to BigQuery and/or GCS (if enabled)
+3. **BigQuery Upload**: Uploads to Google Cloud BigQuery (if enabled)
+4. **Local DB Upload**: Uploads to PostgreSQL (if enabled)
 
 Each step is logged with timestamps and error handling ensures one failure doesn't stop the entire pipeline.
 
@@ -196,10 +185,6 @@ Each step is logged with timestamps and error handling ensures one failure doesn
 | `daily_datset_bq` | BigQuery daily table ID | If ENABLE_BIGQUERY=true | - |
 | `intraday_dataset_bq` | BigQuery intraday table ID | If ENABLE_BIGQUERY=true | - |
 | `GOOGLE_APPLICATION_CREDENTIALS` | GCP service account JSON path | For GCP services | - |
-| `STORAGE_MODE` | Storage mode: bigquery, parquet, both | No | bigquery |
-| `ENABLE_GCS` | Enable GCS Parquet upload | No | false |
-| `GCS_BUCKET_NAME` | GCS bucket name | If ENABLE_GCS=true | - |
-| `GCS_BUCKET_PATH` | GCS bucket path prefix | No | data |
 | `ENABLE_QUALITY_CHECKS` | Enable data quality monitoring | No | true |
 | `QUALITY_REPORT_PATH` | Path for quality reports | No | logs/quality_reports |
 
@@ -251,15 +236,6 @@ Data is uploaded to separate BigQuery tables for daily and intraday data:
 - Intraday data: `intraday_dataset_bq` table
 
 Only new data (after the latest date) is uploaded.
-
-### Google Cloud Storage (Parquet)
-
-Data is exported as Parquet files and uploaded to GCS with date partitioning:
-```
-gs://bucket-name/data/YYYY/MM/DD/ticker_timeframe.parquet
-```
-
-Parquet files are compressed with Snappy compression for efficient storage.
 
 ## Monitoring and Logs
 
@@ -328,7 +304,7 @@ psql -h localhost -U your_user -d your_database -c "SELECT 1;"
 psql -h localhost -U your_user -d your_database -c "\d yfin"
 ```
 
-### BigQuery/GCS Upload Fails
+### BigQuery Upload Fails
 
 ```bash
 # Verify service account credentials
@@ -352,8 +328,7 @@ bq ls your-project:your_dataset
 The service is optimized for small micro VMs:
 
 1. **Incremental Uploads**: Only new data is uploaded to avoid redundant transfers
-2. **Efficient Storage**: Parquet files use compression
-3. **Optional Components**: Disable unused features to save resources
+2. **Optional Components**: Disable unused features to save resources
 4. **Lightweight Dependencies**: Minimal required packages
 5. **Error Handling**: Failures don't crash the service
 
@@ -418,5 +393,5 @@ For issues, questions, or contributions:
 
 ---
 
-**Last Updated**: 2025-01-XX  
-**Version**: 2.0 (Service-based, no Docker)
+**Last Updated**: 2025-12-25  
+**Version**: 3.0 (Weekend Cron Job Automation)
