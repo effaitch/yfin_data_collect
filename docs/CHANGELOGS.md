@@ -1,5 +1,23 @@
 # Changelog
 
+---
+
+## [Optimization] — 2026-03-23 (Memory Efficiency & Documentation Reorg)
+
+### Added
+- **PROGRESS.md**: High-level roadmap and feature tracking in the root.
+- **Session Logs**: Historical development context now stored in `docs/sessions/`.
+- **Mandatory Documentation Policy**: Explicit rules in `AGENTS.md` for keeping documentation in sync with code changes.
+
+### Changed
+- **Memory Optimization**: Refactored `src/backfill_combined_csv_local.py` to process and upload CSV files individually. This prevents the bot from crashing on low-memory micro-VMs when handling large datasets.
+- **Documentation Structure**: Moved legacy guides and analysis files into the `docs/` folder for a cleaner root directory.
+
+### Validated
+- Verified `backfill_combined_csv_local.py` still identifies new data correctly and ignores duplicates using `ON CONFLICT DO NOTHING`.
+
+---
+
 ## Version 3.0 - Weekend Cron Job Automation (2025-12-25)
 
 ### Major Changes
