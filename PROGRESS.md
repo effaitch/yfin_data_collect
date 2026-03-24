@@ -41,7 +41,7 @@ This file tracks the implementation of features and planned optimizations for th
 - [x] Standardize `CHANGELOGS.md`.
 
 ### 2. Pipeline Simplification
-- [ ] **Parquet Integration**: Replace CSV files with Parquet for faster read/write and reduced disk footprint.
+- [x] **Parquet Integration**: Replaced CSV files with Parquet for faster read/write and reduced disk footprint (~75% reduction).
 - [ ] **Single-Core Optimization**: Explicitly limit Python processes to a single core to ensure stability on micro-VMs.
 - [x] **Memory Optimization**: Refactored `backfill_combined_csv_local.py` to process files individually, avoiding large memory allocations.
 - [ ] **Direct-to-DB Path**: Review if raw data can be streamed more directly to PostgreSQL to reduce intermediate file hops.
@@ -58,4 +58,5 @@ This file tracks the implementation of features and planned optimizations for th
 |---------|------|--------|-------|
 | Documentation Structure | 2026-03-23 | ✅ | Created docs/, PROGRESS.md, and sessions/ |
 | CFD vs Spread Bet Epic Alignment | 2026-03-23 | ✅ | Verified data flow for both account types |
+| Parquet Migration | 2026-03-24 | ✅ | 75% disk reduction (2.5GB -> 581MB) |
 | BigQuery Integration | 2025-12-25 | ✅ | Verified end-to-end cloud backup |

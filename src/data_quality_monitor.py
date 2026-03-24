@@ -223,29 +223,32 @@ class DataQualityMonitor:
         """Run quality checks on all data files"""
         logger.info("Starting data quality checks...")
         
-        # Find all CSV files
-        csv_files = glob.glob(os.path.join(self.transf_folder, "*.csv"))
-        self.stats["total_files"] = len(csv_files)
+        # Find all Parquet files
+        parquet_files = glob.glob(os.path.join(self.transf_folder, "*.parquet"))
+        self.stats["total_files"] = len(parquet_files)
         
-        if not csv_files:
-            logger.warning("No CSV files found for quality checks")
+        if not parquet_files:
+            logger.warning("No Parquet files found for quality checks")
             return
         
         report_data = []
         
-        for csv_file in csv_files:
+        for parquet_file in parquet_files:
             try:
                 # Parse ticker and timeframe from filename
-                filename = os.path.basename(csv_file).replace(".csv", "")
+                filename = os.path.basename(parquet_file).replace(".parquet", "")
                 parts = filename.split("_")
                 ticker = parts[0]
                 timeframe = parts[-1]
                 
                 # Load data
-                df = pd.read_csv(csv_file)
+                df = pd.read_parquet(parquet_file)
                 date_col = "Date" if "Date" in df.columns else "Datetime"
                 if date_col in df.columns:
                     df[date_col] = pd.to_datetime(df[date_col])
+                elif isinstance(df.index, pd.DatetimeIndex):
+                    df = df.reset_index()
+                    date_col = df.columns[0]
                 
                 self.stats["total_records"] += len(df)
                 
@@ -270,7 +273,7 @@ class DataQualityMonitor:
                 })
                 
             except Exception as e:
-                logger.error(f"Error processing {csv_file}: {e}", exc_info=True)
+                logger.error(f"Error processing {parquet_file}: {e}", exc_info=True)
                 self.issues.append({
                     "type": "processing_error",
                     "ticker": filename,

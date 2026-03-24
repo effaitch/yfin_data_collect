@@ -57,23 +57,30 @@ class IntradayDataHandler:
         now = datetime.now(timezone.utc)
 
         for file in os.listdir(self.transf_folder):
-            if not file.endswith('.csv'):
+            if not file.endswith('.parquet'):
                 continue
 
-            timeframe = file.replace('.csv', '').split('_')[-1]
+            timeframe = file.replace('.parquet', '').split('_')[-1]
             if timeframe not in self.intraday_timeframes:
                 continue
 
             path = os.path.join(self.transf_folder, file)
 
             try:
-                df = pd.read_csv(path, parse_dates=['Datetime'])
+                df = pd.read_parquet(path)
                 if df.empty:
                     logging.warning(f"⚠️ Empty file detected: {file}, update needed.")
                     return True
 
-                df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert(None)
-                latest = df['Datetime'].max()
+                # Parquet stores datetime objects directly, but let's ensure UTC and no tz for comparison if needed
+                if 'Datetime' in df.columns:
+                    df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert(None)
+                    latest = df['Datetime'].max()
+                else:
+                    # If it's indexed by Datetime
+                    latest = df.index.max()
+                    if isinstance(latest, pd.Timestamp):
+                        latest = latest.tz_localize(timezone.utc).tz_convert(None) if latest.tzinfo else latest
 
                 if pd.isna(latest):
                     logging.warning(f"⚠️ No valid datetime in {file}, update needed.")
@@ -103,7 +110,7 @@ class IntradayDataHandler:
         for ticker in self.tickers:
             for tf in self.intraday_timeframes:
                 period = interval_to_period.get(tf, "60d")  # Default to 60d if not found
-                path = os.path.join(self.fetched_folder, f"{ticker}_{tf}.csv")
+                path = os.path.join(self.fetched_folder, f"{ticker}_{tf}.parquet")
                 logging.info(f"🔄 Fetching {ticker} data for timeframe: {tf} (period: {period})...")
     
                 try:
@@ -112,42 +119,26 @@ class IntradayDataHandler:
                         logging.warning(f"⚠️ No data for {ticker} ({tf})")
                         continue
     
+                    # Flatten MultiIndex columns if present
+                    if isinstance(data.columns, pd.MultiIndex):
+                        data.columns = [col[0] for col in data.columns]
+
                     data.reset_index(inplace=True)
                     data.rename(columns={data.columns[0]: "Datetime"}, inplace=True)
-                    data.to_csv(path, index=False)
+                    data.to_parquet(path, index=False)
                     logging.info(f"✅ Raw data for {ticker} ({tf}) saved to: {path}")
     
                 except Exception as e:
                     logging.error(f"❌ Error fetching {ticker} ({tf}): {e}")
 
-    """def fetch_intraday_data(self):
-        for ticker in self.tickers:
-            for tf in self.intraday_timeframes:
-                path = os.path.join(self.fetched_folder, f"{ticker}_{tf}.csv")
-                logging.info(f"🔄 Fetching {ticker} data for timeframe: {tf}...")
-
-                try:
-                    data = yf.download(ticker, interval=tf, period="max", auto_adjust=True)
-                    if data.empty:
-                        logging.warning(f"⚠️ No data for {ticker} ({tf})")
-                        continue
-
-                    data.reset_index(inplace=True)
-                    data.rename(columns={data.columns[0]: "Datetime"}, inplace=True)
-                    data.to_csv(path, index=False)
-                    logging.info(f"✅ Raw data for {ticker} ({tf}) saved to: {path}")
-
-                except Exception as e:
-                    logging.error(f"❌ Error fetching {ticker} ({tf}): {e}")
-    """
     def clean_fetched_data(self):
         nan_files = {}
 
         for file in os.listdir(self.fetched_folder):
-            if not file.endswith('.csv'):
+            if not file.endswith('.parquet'):
                 continue
 
-            tf = file.replace('.csv', '').split('_')[-1]
+            tf = file.replace('.parquet', '').split('_')[-1]
             if tf not in self.intraday_timeframes:
                 continue
 
@@ -155,18 +146,33 @@ class IntradayDataHandler:
             raw_path = os.path.join(self.raw_folder, file)
 
             try:
-                df = pd.read_csv(fetch_path)
+                df = pd.read_parquet(fetch_path)
 
                 if df.empty:
                     logging.warning(f"⚠️ Skipping empty file: {file}")
                     continue
 
-                if 'Datetime' not in df.columns:
-                    df.columns = df.iloc[0]
+                # Flatten MultiIndex columns if present
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [col[0] for col in df.columns]
+
+                # If first row is just tickers (legacy cleaning logic)
+                ticker = file.split('_')[0]
+                if df.iloc[0].astype(str).str.contains(ticker).any():
                     df = df.iloc[1:].reset_index(drop=True)
 
-                ticker = file.split('_')[0]
-                df = df[~df.apply(lambda row: row.astype(str).str.contains(ticker).any(), axis=1)]
+                if 'Datetime' not in df.columns:
+                    if isinstance(df.index, pd.DatetimeIndex):
+                         df.reset_index(inplace=True)
+                         df.rename(columns={df.columns[0]: "Datetime"}, inplace=True)
+                    else:
+                        # Attempt to find it
+                        possible_dt_cols = [c for c in df.columns if 'Datetime' in str(c) or 'Date' in str(c) or 'index' in str(c).lower()]
+                        if possible_dt_cols:
+                            df.rename(columns={possible_dt_cols[0]: "Datetime"}, inplace=True)
+                        else:
+                            logging.error(f"❌ Datetime column missing in {file}: {df.columns.tolist()}")
+                            continue
 
                 df['Datetime'] = pd.to_datetime(df['Datetime'], utc=True).dt.tz_convert(None)
                 df.dropna(subset=['Datetime'], inplace=True)
@@ -178,7 +184,7 @@ class IntradayDataHandler:
                 if df.isna().any().any():
                     nan_files[file] = df[df.isna().any(axis=1)]
 
-                df.to_csv(raw_path)
+                df.to_parquet(raw_path)
                 logging.info(f"✅ Processed intraday data saved to: {raw_path}")
 
             except Exception as e:
@@ -193,10 +199,10 @@ class IntradayDataHandler:
 
     def check_new_datetime(self):
         for file in os.listdir(self.raw_folder):
-            if not file.endswith('.csv'):
+            if not file.endswith('.parquet'):
                 continue
 
-            tf = file.replace('.csv', '').split('_')[-1]
+            tf = file.replace('.parquet', '').split('_')[-1]
             if tf not in self.intraday_timeframes:
                 continue
 
@@ -205,29 +211,36 @@ class IntradayDataHandler:
             processed_path = os.path.join(self.processed_folder, file)
 
             try:
-                raw_df = pd.read_csv(raw_path, parse_dates=['Datetime'])
-                raw_df['Datetime'] = pd.to_datetime(raw_df['Datetime'], utc=True).dt.tz_convert(None)
-                raw_df.set_index('Datetime', inplace=True)
+                raw_df = pd.read_parquet(raw_path)
+                # Ensure Datetime is index and has no TZ
+                if 'Datetime' in raw_df.columns:
+                    raw_df['Datetime'] = pd.to_datetime(raw_df['Datetime'], utc=True).dt.tz_convert(None)
+                    raw_df.set_index('Datetime', inplace=True)
+                else:
+                    raw_df.index = pd.to_datetime(raw_df.index, utc=True).tz_convert(None)
 
                 if not os.path.exists(transf_path):
-                    raw_df.to_csv(transf_path)
+                    raw_df.to_parquet(transf_path)
                     logging.info(f"✅ New master file created: {transf_path}")
                     continue
 
-                transf_df = pd.read_csv(transf_path, parse_dates=['Datetime'])
-                transf_df['Datetime'] = pd.to_datetime(transf_df['Datetime'], utc=True).dt.tz_convert(None)
-                transf_df.set_index('Datetime', inplace=True)
+                transf_df = pd.read_parquet(transf_path)
+                if 'Datetime' in transf_df.columns:
+                    transf_df['Datetime'] = pd.to_datetime(transf_df['Datetime'], utc=True).dt.tz_convert(None)
+                    transf_df.set_index('Datetime', inplace=True)
+                else:
+                    transf_df.index = pd.to_datetime(transf_df.index, utc=True).tz_convert(None)
 
                 new_rows = raw_df.loc[~raw_df.index.isin(transf_df.index)]
 
                 if not new_rows.empty:
-                    new_rows.to_csv(processed_path)
+                    new_rows.to_parquet(processed_path)
                     logging.info(f"✅ New data detected and saved to: {processed_path}")
 
                     combined = pd.concat([transf_df, new_rows])
                     combined = combined[~combined.index.duplicated(keep='first')]
                     combined.sort_index(inplace=True)
-                    combined.to_csv(transf_path)
+                    combined.to_parquet(transf_path)
                     logging.info(f"✅ Appended new data and updated: {transf_path}")
                 else:
                     logging.info(f"ℹ️ No new data found for {file}.")

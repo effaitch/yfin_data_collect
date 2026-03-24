@@ -59,7 +59,7 @@ class DailyDataHandler:
 
         # Loop through each ticker to check the files
         for ticker in self.tickers:
-            expected_filename = f"{ticker}_1d.csv"
+            expected_filename = f"{ticker}_1d.parquet"
             path = os.path.join(self.transf_folder, expected_filename)
 
             # Check if file exists
@@ -69,15 +69,22 @@ class DailyDataHandler:
                 continue
 
             try:
-                # Read the CSV and parse dates
-                df = pd.read_csv(path, parse_dates=['Date'])
+                # Read the Parquet file
+                df = pd.read_parquet(path)
                 if df.empty:
                     logging.warning(f"⚠️ Empty file detected: {expected_filename}, update needed.")
                     needs_update_flag = True
                     continue
 
-                df['Date'] = pd.to_datetime(df['Date']).dt.date
-                latest = df['Date'].max()
+                if 'Date' in df.columns:
+                    df['Date'] = pd.to_datetime(df['Date']).dt.date
+                    latest = df['Date'].max()
+                else:
+                    latest = df.index.max()
+                    if isinstance(latest, datetime):
+                        latest = latest.date()
+                    elif isinstance(latest, pd.Timestamp):
+                        latest = latest.date()
 
                 if pd.isna(latest):
                     logging.warning(f"⚠️ No valid date in {expected_filename}, update needed.")
@@ -102,7 +109,7 @@ class DailyDataHandler:
     def fetch_daily_data(self):
         # Fetch data for each ticker
         for ticker in self.tickers:
-            path = os.path.join(self.fetched_folder, f"{ticker}_1d.csv")
+            path = os.path.join(self.fetched_folder, f"{ticker}_1d.parquet")
             logging.info(f"🔄 Fetching {ticker} daily data...")
 
             try:
@@ -112,9 +119,13 @@ class DailyDataHandler:
                     logging.warning(f"⚠️ No data for {ticker} (1d)")
                     continue
 
+                # Flatten MultiIndex columns if present
+                if isinstance(data.columns, pd.MultiIndex):
+                    data.columns = [col[0] for col in data.columns]
+
                 data.reset_index(inplace=True)
                 data.rename(columns={data.columns[0]: "Date"}, inplace=True)
-                data.to_csv(path, index=False)
+                data.to_parquet(path, index=False)
                 logging.info(f"✅ Raw daily data for {ticker} saved to: {path}")
 
             except Exception as e:
@@ -126,31 +137,47 @@ class DailyDataHandler:
 
         # Loop through fetched data files
         for file in os.listdir(self.fetched_folder):
-            if not file.endswith('.csv') or "_1d" not in file:
+            if not file.endswith('.parquet') or "_1d" not in file:
                 continue
 
             fetch_path = os.path.join(self.fetched_folder, file)
             raw_path = os.path.join(self.raw_folder, file)
 
             try:
-                df = pd.read_csv(fetch_path)
+                df = pd.read_parquet(fetch_path)
 
                 if df.empty:
                     logging.warning(f"⚠️ Skipping empty file: {file}")
                     continue
 
-                # Handle case if 'Date' column is missing
-                if 'Date' not in df.columns:
-                    df.columns = df.iloc[0]
+                # If columns are MultiIndex (can happen if saved differently)
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = [col[0] for col in df.columns]
+
+                # If first row is just tickers (legacy cleaning logic)
+                ticker = file.split('_')[0]
+                if df.iloc[0].astype(str).str.contains(ticker).any():
                     df = df.iloc[1:].reset_index(drop=True)
 
-                # Remove rows containing ticker in any column
-                ticker = file.split('_')[0]
-                df = df[~df.apply(lambda row: row.astype(str).str.contains(ticker).any(), axis=1)]
+                # Ensure 'Date' is present
+                if 'Date' not in df.columns:
+                    # Check if it's the first column
+                    if isinstance(df.index, pd.DatetimeIndex):
+                         df.reset_index(inplace=True)
+                         df.rename(columns={df.columns[0]: "Date"}, inplace=True)
+                    else:
+                        # Attempt to find it
+                        possible_date_cols = [c for c in df.columns if 'Date' in str(c) or 'index' in str(c).lower()]
+                        if possible_date_cols:
+                            df.rename(columns={possible_date_cols[0]: "Date"}, inplace=True)
+                        else:
+                            logging.error(f"❌ Date column missing in {file}: {df.columns.tolist()}")
+                            continue
 
                 # Convert Date to datetime and drop NaN rows
-                df['Date'] = pd.to_datetime(df['Date']).dt.date
+                df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
                 df.dropna(subset=['Date'], inplace=True)
+                df['Date'] = df['Date'].dt.date
                 df.set_index('Date', inplace=True)
 
                 # Convert all columns to numeric
@@ -161,7 +188,17 @@ class DailyDataHandler:
                 if df.isna().any().any():
                     nan_files[file] = df[df.isna().any(axis=1)]
 
-                df.to_csv(raw_path)
+                df.to_parquet(raw_path)
+                logging.info(f"✅ Processed daily data saved to: {raw_path}")
+
+            except Exception as e:
+                logging.error(f"❌ Error processing {file}: {e}")
+
+                # Record files with NaN rows
+                if df.isna().any().any():
+                    nan_files[file] = df[df.isna().any(axis=1)]
+
+                df.to_parquet(raw_path)
                 logging.info(f"✅ Processed daily data saved to: {raw_path}")
 
             except Exception as e:
@@ -177,7 +214,7 @@ class DailyDataHandler:
     def check_new_date(self):
         # Check for new date in raw data and update transformed files
         for file in os.listdir(self.raw_folder):
-            if not file.endswith('.csv') or "_1d" not in file:
+            if not file.endswith('.parquet') or "_1d" not in file:
                 continue
 
             raw_path = os.path.join(self.raw_folder, file)
@@ -185,31 +222,37 @@ class DailyDataHandler:
             processed_path = os.path.join(self.processed_folder, file)
 
             try:
-                raw_df = pd.read_csv(raw_path, parse_dates=['Date'])
-                raw_df['Date'] = pd.to_datetime(raw_df['Date']).dt.date
-                raw_df.set_index('Date', inplace=True)
+                raw_df = pd.read_parquet(raw_path)
+                if 'Date' in raw_df.columns:
+                    raw_df['Date'] = pd.to_datetime(raw_df['Date']).dt.date
+                    raw_df.set_index('Date', inplace=True)
+                else:
+                    raw_df.index = pd.to_datetime(raw_df.index).date
 
                 # If transformation file doesn't exist, create it
                 if not os.path.exists(transf_path):
-                    raw_df.to_csv(transf_path)
+                    raw_df.to_parquet(transf_path)
                     logging.info(f"✅ New master daily file created: {transf_path}")
                     continue
 
-                transf_df = pd.read_csv(transf_path, parse_dates=['Date'])
-                transf_df['Date'] = pd.to_datetime(transf_df['Date']).dt.date
-                transf_df.set_index('Date', inplace=True)
+                transf_df = pd.read_parquet(transf_path)
+                if 'Date' in transf_df.columns:
+                    transf_df['Date'] = pd.to_datetime(transf_df['Date']).dt.date
+                    transf_df.set_index('Date', inplace=True)
+                else:
+                    transf_df.index = pd.to_datetime(transf_df.index).date
 
                 new_rows = raw_df.loc[~raw_df.index.isin(transf_df.index)]
 
                 # If there are new rows, append to the transformed file
                 if not new_rows.empty:
-                    new_rows.to_csv(processed_path)
+                    new_rows.to_parquet(processed_path)
                     logging.info(f"✅ New daily data detected and saved to: {processed_path}")
 
                     combined = pd.concat([transf_df, new_rows])
                     combined = combined[~combined.index.duplicated(keep='first')]
                     combined.sort_index(inplace=True)
-                    combined.to_csv(transf_path)
+                    combined.to_parquet(transf_path)
                     logging.info(f"✅ Appended new daily data and updated: {transf_path}")
                 else:
                     logging.info(f"ℹ️ No new daily data found for {file}.")

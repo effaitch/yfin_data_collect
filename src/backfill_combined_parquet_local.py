@@ -27,7 +27,7 @@ DB_PORT = os.getenv("DB_PORT")
 
 # Set paths
 transf_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "../all_ohclv_data/transf_data/"))
-all_csvs = glob.glob(os.path.join(transf_folder, "*.csv"))
+all_parquets = glob.glob(os.path.join(transf_folder, "*.parquet"))
 
 def format_df(df, filepath):
     """Format dataframe columns and types for DB upload."""
@@ -36,12 +36,17 @@ def format_df(df, filepath):
         df.rename(columns={"Date": "timestamp"}, inplace=True)
     elif "Datetime" in df.columns:
         df.rename(columns={"Datetime": "timestamp"}, inplace=True)
+    elif isinstance(df.index, (pd.DatetimeIndex, pd.Index)):
+        # Check if the index is the timestamp
+        if "timestamp" not in df.columns:
+            df.index.name = "timestamp"
+            df.reset_index(inplace=True)
     else:
         logger.warning(f"File {filepath} missing Date or Datetime column. Skipping.")
         return None
         
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
-    base = os.path.basename(filepath).replace(".csv", "")
+    base = os.path.basename(filepath).replace(".parquet", "")
     parts = base.split("_")
     ticker = parts[0]
     timeframe = parts[-1]
@@ -88,8 +93,8 @@ def upload_to_pg(conn, df, table_name):
     return len(df)
 
 def main():
-    if not all_csvs:
-        logger.info("No CSV files found for upload.")
+    if not all_parquets:
+        logger.info("No Parquet files found for upload.")
         return
 
     # Connect to Postgres
@@ -108,12 +113,12 @@ def main():
     yfin_table = "yfin"
     total_uploaded = 0
     
-    logger.info(f"Processing {len(all_csvs)} files individually...")
+    logger.info(f"Processing {len(all_parquets)} files individually...")
 
-    for filepath in all_csvs:
+    for filepath in all_parquets:
         try:
             # Read file
-            df = pd.read_csv(filepath)
+            df = pd.read_parquet(filepath)
             if df.empty:
                 continue
                 
@@ -128,7 +133,7 @@ def main():
             # Filter new data
             latest_ts = get_latest_timestamp_pg(conn, yfin_table, ticker, timeframe)
             if latest_ts:
-                latest_ts = pd.to_datetime(latest_ts)
+                latest_ts = pd.to_datetime(latest_ts, utc=True)
                 formatted_df = formatted_df[formatted_df["timestamp"] > latest_ts]
             
             # Upload

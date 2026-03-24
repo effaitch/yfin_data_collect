@@ -17,20 +17,28 @@ intraday_table_id = os.getenv("intraday_dataset_bq")
 
 # Set paths
 transf_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), "../all_ohclv_data/transf_data/"))
-all_csvs = glob.glob(os.path.join(transf_folder, "*.csv"))
+all_parquets = glob.glob(os.path.join(transf_folder, "*.parquet"))
 
 # Separate daily and intraday files
-daily_files = [f for f in all_csvs if f.endswith("_1d.csv")]
-intraday_files = [f for f in all_csvs if not f.endswith("_1d.csv")]
+daily_files = [f for f in all_parquets if f.endswith("_1d.parquet")]
+intraday_files = [f for f in all_parquets if not f.endswith("_1d.parquet")]
 
 def load_and_format(filepath, is_daily=False):
-    df = pd.read_csv(filepath)
+    df = pd.read_parquet(filepath)
     if is_daily:
-        df["Date"] = pd.to_datetime(df["Date"])
+        if 'Date' not in df.columns and isinstance(df.index, pd.DatetimeIndex):
+            df.index.name = "Date"
+            df.reset_index(inplace=True)
+        df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
     else:
-        df.rename(columns={"Datetime": "Date"}, inplace=True)
-        df["Date"] = pd.to_datetime(df["Date"])
-    base = os.path.basename(filepath).replace(".csv", "")
+        if 'Datetime' in df.columns:
+            df.rename(columns={"Datetime": "Date"}, inplace=True)
+        elif 'Date' not in df.columns and isinstance(df.index, pd.DatetimeIndex):
+            df.index.name = "Date"
+            df.reset_index(inplace=True)
+        df["Date"] = pd.to_datetime(df["Date"]).dt.tz_localize(None)
+        
+    base = os.path.basename(filepath).replace(".parquet", "")
     parts = base.split("_")
     ticker = parts[0]
     timeframe = parts[-1]

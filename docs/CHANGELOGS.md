@@ -2,6 +2,22 @@
 
 ---
 
+## [Optimization] — 2026-03-24 (Parquet Migration & Disk Optimization)
+
+### Changed
+- **Parquet Migration**: Transitioned all intermediate data storage from `.csv` to `.parquet`.
+- **Disk Optimization**: Reduced data folder footprint by ~75% (2.5GB -> 581MB).
+- **MultiIndex Handling**: Refactored `IntradayDataHandler` and `DailyDataHandler` to correctly flatten yfinance MultiIndex columns, preventing schema issues.
+- **Script Renaming**: 
+  - `backfill_combined_csv_local.py` -> `backfill_combined_parquet_local.py`
+  - `combine_transf_csv_for_upload.py` -> `combine_transf_parquet_for_upload.py`
+
+### Validated
+- Verified full pipeline (Collection -> Cleaning -> DB Upload) works with Parquet files.
+- Successfully uploaded 83,000+ new rows to PostgreSQL using the new Parquet-based logic.
+
+---
+
 ## [Optimization] — 2026-03-23 (Memory Efficiency & Documentation Reorg)
 
 ### Added

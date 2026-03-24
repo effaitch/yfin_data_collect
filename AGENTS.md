@@ -24,9 +24,9 @@ service.py (Main Orchestrator)
 │   └── src/IntradayDataHandler.py - Intraday OHLCV
 ├── Step 2: Data Quality Monitoring (src/data_quality_monitor.py)
 │   └── Automated quality checks and visual reports
-├── Step 3: BigQuery Upload (src/combine_transf_csv_for_upload.py)
+├── Step 3: BigQuery Upload (src/combine_transf_parquet_for_upload.py)
 │   └── Google Cloud BigQuery sync
-└── Step 4: Local Database Upload (src/backfill_combined_csv_local.py)
+└── Step 4: Local Database Upload (src/backfill_combined_parquet_local.py)
     └── PostgreSQL (TimescaleDB) upload
 ```
 
@@ -36,7 +36,7 @@ service.py (Main Orchestrator)
 2. **Micro-VM Friendly**: Avoid high-concurrency or high-memory operations. Favor sequential processing.
 2. **Incremental by Default**: Always check the destination (DB/BQ) for the latest timestamp before fetching data to avoid duplicates.
 3. **Environment Isolation**: All configuration must be handled via `.env`. No hardcoded credentials.
-4. **CSV to Parquet Migration**: (Planned) Favor Parquet for intermediate storage to improve performance.
+4. **Parquet Storage**: Use Parquet for intermediate storage to improve performance and reduce disk footprint.
 
 ---
 

@@ -4,8 +4,8 @@ Main service script for Yahoo Finance Data Collection
 Orchestrates the complete workflow in the correct order:
 1. Data collection (main.py)
 2. Quality checks (data_quality_monitor.py)
-3. BigQuery upload (combine_transf_csv_for_upload.py)
-4. Local DB upload (backfill_combined_csv_local.py)
+3. BigQuery upload (combine_transf_parquet_for_upload.py)
+4. Local DB upload (backfill_combined_parquet_local.py)
 
 Designed to run via cron job on weekends
 """
@@ -119,7 +119,7 @@ class DataCollectionService:
             return True
     
     def upload_to_bigquery(self):
-        """Step 3: Upload to BigQuery (combine_transf_csv_for_upload.py)"""
+        """Step 3: Upload to BigQuery (combine_transf_parquet_for_upload.py)"""
         if not self.enable_bigquery:
             logger.info("Skipping BigQuery upload (disabled)")
             return True
@@ -128,7 +128,7 @@ class DataCollectionService:
         logger.info("Step 3: BigQuery Upload")
         logger.info("=" * 60)
         
-        bq_script = self.project_root / "src" / "combine_transf_csv_for_upload.py"
+        bq_script = self.project_root / "src" / "combine_transf_parquet_for_upload.py"
         success = self.run_script(bq_script, "BigQuery Upload")
         
         # Don't fail the pipeline on BigQuery errors
@@ -137,7 +137,7 @@ class DataCollectionService:
         return True
     
     def upload_to_local_db(self):
-        """Step 4: Upload to local PostgreSQL database (backfill_combined_csv_local.py)"""
+        """Step 4: Upload to local PostgreSQL database (backfill_combined_parquet_local.py)"""
         if not self.enable_local_db:
             logger.info("Skipping local DB upload (disabled)")
             return True
@@ -146,7 +146,7 @@ class DataCollectionService:
         logger.info("Step 4: Local Database Upload")
         logger.info("=" * 60)
         
-        local_db_script = self.project_root / "src" / "backfill_combined_csv_local.py"
+        local_db_script = self.project_root / "src" / "backfill_combined_parquet_local.py"
         success = self.run_script(local_db_script, "Local DB Upload")
         
         # Don't fail the pipeline on local DB errors
