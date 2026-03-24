@@ -28,6 +28,9 @@ service.py (Main Orchestrator)
 │   └── Google Cloud BigQuery sync
 └── Step 4: Local Database Upload (src/backfill_combined_parquet_local.py)
     └── PostgreSQL (TimescaleDB) upload
+
+**Auxiliary Services**:
+- **Real-Time Proxy Volume Sync** (`src/realtime_volume_sync.py`): Runs every 5 mins via cron to provide high-frequency volume data for `demo_trader`.
 ```
 
 ## 📜 Agent Mandates
@@ -51,6 +54,9 @@ python service.py
 
 # Run weekend job (crontab equivalent)
 ./run_weekend_job.sh
+
+# Run real-time volume sync (runs every 5 mins via cron)
+python src/realtime_volume_sync.py
 ```
 
 ---
@@ -59,4 +65,4 @@ python service.py
 - **Yahoo Finance Gaps**: Intraday data for ticker symbols with low liquidity may have gaps. The Quality Monitor flags these.
 - **Local DB Connectivity**: Ensure the bot runs on the host (or uses host networking) to reach `127.0.0.1:55432`.
 
-**Last Updated**: March 23, 2026
+**Last Updated**: March 24, 2026

@@ -4,7 +4,11 @@
 
 ## [Optimization] — 2026-03-24 (Parquet Migration & Disk Optimization)
 
-### Changed
+### Added
+- **Real-Time Proxy Volume Sync**: Created `src/realtime_volume_sync.py` to fetch high-frequency volume data (1m, 5m, 15m, 1h) from Yahoo Finance.
+- **Database Schema Update**: Added a unique index on `yfin (ticker, timeframe, timestamp)` to support efficient `ON CONFLICT` updates.
+- **Cron Automation**: Added a 5-minute cron job to ensure volume data is always fresh for the `demo_trader` bot.
+...
 - **Parquet Migration**: Transitioned all intermediate data storage from `.csv` to `.parquet`.
 - **Disk Optimization**: Reduced data folder footprint by ~75% (2.5GB -> 581MB).
 - **MultiIndex Handling**: Refactored `IntradayDataHandler` and `DailyDataHandler` to correctly flatten yfinance MultiIndex columns, preventing schema issues.
