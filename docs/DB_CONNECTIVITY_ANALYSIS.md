@@ -99,7 +99,7 @@ DB_PORT=55432
 
 **Connectivity:**
 - ⚠️ Container: **LIKELY BROKEN** - Bridge mode + `localhost` won't work
-- ✅ Cron script: **WORKING** - Runs natively on host via `./venv/bin/python`
+- ✅ Cron script: **WORKING** - Runs natively on host via `./ .venv/bin/python`
 
 **Action Required:**
 Choose one of these solutions:
@@ -220,7 +220,7 @@ nc -zv 172.17.0.1 55432  # Should SUCCEED (if using bridge gateway)
 ```bash
 # Run cron script manually (on host)
 cd /home/farq/projects/binance_live_data
-./venv/bin/python scripts/upload_to_postgres.py --dry-run
+./ .venv/bin/python scripts/upload_to_postgres.py --dry-run
 # Should work - native host process
 ```
 

@@ -1,14 +1,14 @@
 #!/bin/bash
 # Cron job script for Yahoo Finance Data Collection
-# This script activates the venv and runs the service
+# This script activates the .venv and runs the service
 # Logs are saved to the logs directory with timestamps
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-# Activate virtual environment
-source "$SCRIPT_DIR/venv/bin/activate"
+# Activate shared workspace virtual environment
+source "/home/farq/projects/demo_trader/.venv/bin/activate"
 
 # Run the service
 python3 "$SCRIPT_DIR/service.py"

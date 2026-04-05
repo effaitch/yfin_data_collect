@@ -110,7 +110,7 @@ Test the service manually before setting up the cron job:
 ```bash
 # Activate venv and run service
 cd /home/farq/projects/yfin_data_collect
-source venv/bin/activate
+source  .venv/bin/activate
 python service.py
 ```
 

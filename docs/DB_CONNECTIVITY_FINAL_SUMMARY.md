@@ -92,7 +92,7 @@ DB_PORT=55432      # ⚠️ Not used by container
 **What it does:**
 - Reads CSV files created by container
 - Uploads to PostgreSQL
-- Runs natively on host: `./venv/bin/python scripts/upload_to_postgres.py`
+- Runs natively on host: `./ .venv/bin/python scripts/upload_to_postgres.py`
 
 **Why it works:** Native host script → Can access `localhost:55432`
 

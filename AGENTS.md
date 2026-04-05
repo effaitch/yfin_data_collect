@@ -46,9 +46,12 @@ service.py (Main Orchestrator)
 ## 🛠️ Operational Commands
 
 ```bash
+# Activate workspace shared virtual environment
+source /home/farq/projects/demo_trader/.venv/bin/activate
+
 # Validate configuration
 python validate_config.py
-
+...
 # Run full pipeline manually
 python service.py
 
