@@ -25,6 +25,26 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
+def with_date_column(df):
+    """Return (df, date_col) with the bar time as a column.
+
+    Intraday parquet files keep it in a DatetimeIndex named "Datetime"; daily files keep datetime.date objects in an
+    unnamed object-dtype index. Before 2026-11-11 the daily case matched neither branch and every *_1d file failed
+    the duplicate check with KeyError: 'Datetime' (58 files per weekly run).
+    """
+    for col in ("Date", "Datetime"):
+        if col in df.columns:
+            df = df.copy()
+            df[col] = pd.to_datetime(df[col])
+            return df, col
+    df = df.reset_index()
+    first = df.columns[0]
+    date_col = "Datetime" if first == "Datetime" else "Date"
+    df = df.rename(columns={first: date_col})
+    df[date_col] = pd.to_datetime(df[date_col])
+    return df, date_col
+
+
 class DataQualityMonitor:
     """Monitors data quality and generates reports with visualizations"""
     
@@ -243,12 +263,7 @@ class DataQualityMonitor:
                 
                 # Load data
                 df = pd.read_parquet(parquet_file)
-                date_col = "Date" if "Date" in df.columns else "Datetime"
-                if date_col in df.columns:
-                    df[date_col] = pd.to_datetime(df[date_col])
-                elif isinstance(df.index, pd.DatetimeIndex):
-                    df = df.reset_index()
-                    date_col = df.columns[0]
+                df, date_col = with_date_column(df)
                 
                 self.stats["total_records"] += len(df)
                 

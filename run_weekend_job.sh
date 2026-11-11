@@ -7,8 +7,13 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
-# Activate shared workspace virtual environment
-source "/home/farq/projects/demo_trader/.venv/bin/activate"
+# Activate the shared workspace virtual environment: /home/farq/projects/.venv on the VPS, demo_trader's on the
+# laptop (it has no root .venv). The repo's own .venv/ is no longer tracked (2026-11-11).
+if [ -f /home/farq/projects/.venv/bin/activate ]; then
+    source /home/farq/projects/.venv/bin/activate
+else
+    source /home/farq/projects/demo_trader/.venv/bin/activate
+fi
 
 # Run the service
 python3 "$SCRIPT_DIR/service.py"

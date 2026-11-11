@@ -8,3 +8,7 @@ venv/
 !ticker.json
 !test_ticker.json
 !bq_schema.txt
+# 2026-11-11: the virtualenv and bytecode were tracked (28,970 + 11,281 files, ~1 GB)
+.venv/
+__pycache__/
+*.pyc
