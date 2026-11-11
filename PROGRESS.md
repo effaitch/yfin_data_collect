@@ -10,6 +10,9 @@ This file tracks the implementation of features and planned optimizations for th
 - **Automation**: Fully automated weekend cron job via `run_weekend_job.sh`.
 - **Data Integrity**: Integrated quality checks with visual reports.
 - **Connectivity**: Verified connectivity to local PostgreSQL (localhost:55432) and BigQuery.
+- **Host (2026-11-11)**: the weekend job and `realtime_volume_sync.py` now run on the **VPS** (operator: collection on
+  the VPS only); the laptop receives `yfin` through the trading_backup_sync hourly copy. The laptop cron lines stay on
+  until after 2026-11-15 10:00 UTC, then go off.
 
 ---
 
@@ -60,3 +63,4 @@ This file tracks the implementation of features and planned optimizations for th
 | CFD vs Spread Bet Epic Alignment | 2026-03-23 | ✅ | Verified data flow for both account types |
 | Parquet Migration | 2026-03-24 | ✅ | 75% disk reduction (2.5GB -> 581MB) |
 | BigQuery Integration | 2025-12-25 | ✅ | Verified end-to-end cloud backup |
+| Untrack `.venv/` + monitor fix (move to VPS) | 2026-11-11 | ✅ | `63ffeeb4`; session `docs/sessions/2026-11-11-untrack-venv-monitor-fix.md` |

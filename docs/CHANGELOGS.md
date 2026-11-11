@@ -2,6 +2,21 @@
 
 ---
 
+## [Maintenance] — 2026-11-11 (collection moves to the VPS)
+
+### Changed
+- **`.venv/` and `__pycache__/` untracked** (28,975 paths; `.gitignore` adds `.venv/`, `__pycache__/`, `*.pyc`). The
+  repo had committed its 1 GB virtual environment.
+- **`run_weekend_job.sh`** uses `/home/farq/projects/.venv` where it exists (VPS), else `demo_trader/.venv` (laptop).
+
+### Fixed
+- **`src/data_quality_monitor.py`**: daily parquet files keep their date in an unnamed index (`datetime.date`
+  objects), so neither the `Date` nor the `Datetime` branch matched and every daily file raised `KeyError`.
+  New `with_date_column(df)` handles named columns, a named index and the unnamed date index. Tests
+  `tests/test_data_quality_monitor.py` (3).
+
+---
+
 ## [Optimization] — 2026-03-24 (Parquet Migration & Disk Optimization)
 
 ### Added
