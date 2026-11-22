@@ -2,6 +2,17 @@
 
 ---
 
+## [Config] — 2026-11-22 (Nasdaq-100 added to the daily list)
+
+- `ticker.json`: `^NDX` added to `index_tickers` (61 tickers). The context library on trading_system needs a
+  maintained Nasdaq-100 daily series to fill the price moves of new US100 entries; the database held only the
+  Nasdaq Composite (`^IXIC`).
+- No schema change. The weekend job downloads the full history of a new ticker (`period="max"`); first rows are
+  expected from the run of Saturday 2026-11-28 02:00 UTC.
+- Tests: 3 passed.
+
+---
+
 ## [Maintenance] — 2026-11-11 (collection moves to the VPS)
 
 ### Changed

@@ -64,3 +64,4 @@ This file tracks the implementation of features and planned optimizations for th
 | Parquet Migration | 2026-03-24 | ✅ | 75% disk reduction (2.5GB -> 581MB) |
 | BigQuery Integration | 2025-12-25 | ✅ | Verified end-to-end cloud backup |
 | Untrack `.venv/` + monitor fix (move to VPS) | 2026-11-11 | ✅ | `63ffeeb4`; session `docs/sessions/2026-11-11-untrack-venv-monitor-fix.md` |
+| Nasdaq-100 (`^NDX`) in the daily list | 2026-11-22 | ✅ | For the context library's US100 moves; first rows due Sat 2026-11-28 02:00 UTC |
