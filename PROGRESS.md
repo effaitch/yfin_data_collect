@@ -6,6 +6,10 @@ This file tracks the implementation of features and planned optimizations for th
 
 ## 📈 Current Status
 
+- **2026-11-24**: daily rows Yahoo returned without prices are no longer stored, and the 36 stored ones (Fridays
+  2026-11-13 and 11-20) are filled (DATA-YFIN-FRIDAY-CLOSE-01). `^NDX` history is in the table. Open: stored rows of
+  different weeks can sit on different adjustment bases (YFIN-ADJUSTMENT-BASE-01); daily bars arrive once a week.
+
 - **Architecture**: Service-based (no Docker) - optimized for small micro VMs.
 - **Automation**: Fully automated weekend cron job via `run_weekend_job.sh`.
 - **Data Integrity**: Integrated quality checks with visual reports.

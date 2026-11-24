@@ -1,7 +1,7 @@
 """
 Process CSV files in all_ohclv_data/transf_data one by one and upload to Postgres.
 Memory-optimized for micro-VMs: avoids concatenating all files into a single DataFrame.
-Upload only new data (after latest timestamp in Postgres) to the 'yfin' table.
+Upload only new data (after latest timestamp in Postgres) to the 'yfin' table, and fill stored rows that have no close.
 Schema: ticker (text), timeframe (text), timestamp (timestamptz), open (double), high (double), low (double), close (double), volume (double)
 """
 
@@ -79,6 +79,41 @@ def get_latest_timestamp_pg(conn, table_name, ticker, timeframe):
         result = cur.fetchone()
         return result[0] if result else None
 
+def get_priceless_timestamps_pg(conn, table_name, ticker, timeframe):
+    """Timestamps of stored rows that have no close (DATA-YFIN-FRIDAY-CLOSE-01)."""
+    with conn.cursor() as cur:
+        query = (f"SELECT timestamp FROM {table_name} WHERE ticker = %s AND timeframe = %s "
+                 "AND (close IS NULL OR close = 'NaN')")
+        cur.execute(query, (ticker, timeframe))
+        return [r[0] for r in cur.fetchall()]
+
+
+def select_rows_to_upload(df, latest_ts, priceless_ts=()):
+    """Rows to send: those after the latest stored bar, plus those whose stored version has no close.
+
+    DATA-YFIN-FRIDAY-CLOSE-01: Yahoo sometimes returns the newest day with a volume and no prices. Such a row is
+    not a bar and is never sent. A stored row without a close is sent again once Yahoo has its prices; before this
+    fix only rows newer than the latest stored one were sent, so an empty Friday row stayed empty for good.
+    """
+    df = df[df["close"].notna()]
+    if latest_ts is None:
+        return df
+    latest = pd.to_datetime(latest_ts, utc=True)
+    holes = pd.to_datetime(list(priceless_ts), utc=True) if len(priceless_ts) else pd.DatetimeIndex([], tz="UTC")
+    return df[(df["timestamp"] > latest) | (df["timestamp"].isin(holes))]
+
+
+def upload_query(table_name, cols):
+    """Insert new bars; fill the prices of a stored row only where that row has no close."""
+    return (
+        f"INSERT INTO {table_name} ({cols}) VALUES %s "
+        "ON CONFLICT (ticker, timeframe, timestamp) DO UPDATE SET "
+        "open = EXCLUDED.open, high = EXCLUDED.high, low = EXCLUDED.low, close = EXCLUDED.close, "
+        f"volume = COALESCE(EXCLUDED.volume, {table_name}.volume) "
+        f"WHERE {table_name}.close IS NULL OR {table_name}.close = 'NaN'"
+    )
+
+
 def upload_to_pg(conn, df, table_name):
     """Upload data using execute_values for efficiency."""
     if df.empty:
@@ -86,7 +121,7 @@ def upload_to_pg(conn, df, table_name):
     # Prepare data as list of tuples
     tuples = [tuple(x) for x in df.to_numpy()]
     cols = ','.join(df.columns)
-    query = f"INSERT INTO {table_name} ({cols}) VALUES %s ON CONFLICT DO NOTHING"
+    query = upload_query(table_name, cols)
     with conn.cursor() as cur:
         execute_values(cur, query, tuples)
     conn.commit()
@@ -130,11 +165,10 @@ def main():
             ticker = formatted_df["ticker"].iloc[0]
             timeframe = formatted_df["timeframe"].iloc[0]
             
-            # Filter new data
+            # Filter new data: bars after the latest stored one, and bars whose stored row has no close
             latest_ts = get_latest_timestamp_pg(conn, yfin_table, ticker, timeframe)
-            if latest_ts:
-                latest_ts = pd.to_datetime(latest_ts, utc=True)
-                formatted_df = formatted_df[formatted_df["timestamp"] > latest_ts]
+            priceless_ts = get_priceless_timestamps_pg(conn, yfin_table, ticker, timeframe) if latest_ts else []
+            formatted_df = select_rows_to_upload(formatted_df, latest_ts, priceless_ts)
             
             # Upload
             if not formatted_df.empty:

@@ -242,6 +242,15 @@ class DailyDataHandler:
                 else:
                     transf_df.index = pd.to_datetime(transf_df.index).date
 
+                # DATA-YFIN-FRIDAY-CLOSE-01: a row without a close is not a bar. Yahoo sometimes returns the
+                # newest day with a volume and no prices; the master file kept that first version for good.
+                # Such a row is not taken from the download, and one already in the master file is dropped
+                # here so that the complete row replaces it.
+                if 'Close' in raw_df.columns:
+                    raw_df = raw_df[raw_df['Close'].notna()]
+                if 'Close' in transf_df.columns:
+                    transf_df = transf_df[transf_df['Close'].notna()]
+
                 new_rows = raw_df.loc[~raw_df.index.isin(transf_df.index)]
 
                 # If there are new rows, append to the transformed file

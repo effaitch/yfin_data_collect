@@ -2,6 +2,16 @@
 
 ---
 
+## [Fix] — 2026-11-24 (daily rows without prices: DATA-YFIN-FRIDAY-CLOSE-01)
+
+- `src/DailyDataHandler.py`: a downloaded row without a close is not added to the master file, and a stored one is
+  replaced by the complete row.
+- `src/backfill_combined_parquet_local.py`: rows without a close are not sent; stored rows without a close are sent
+  again and filled (`ON CONFLICT … DO UPDATE … WHERE` the stored close is empty). Complete stored rows are untouched.
+- 6 new tests (9 pass). Job run by hand on the VPS: 36 empty rows of 2026-11-13 and 11-20 filled; `^NDX` history
+  loaded (10,367 rows).
+- Session: `docs/sessions/2026-11-24-friday-close-fix.md`.
+
 ## [Config] — 2026-11-22 (Nasdaq-100 added to the daily list)
 
 - `ticker.json`: `^NDX` added to `index_tickers` (61 tickers). The context library on trading_system needs a
